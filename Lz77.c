@@ -4,10 +4,15 @@
 
 void compress(char* inputText, char* outputfile){
     printf("Compressing to %s\n", outputfile);
+
+
+    printToFile(outputfile, inputText);
 }
 
 void decompress(char* inputText, char* outputfile){
     printf("DeCompressing to %s\n", outputfile);
+
+    printToFile(outputfile, inputText);
 }
 
 char* readFile(char* filename) {
@@ -28,6 +33,16 @@ char* readFile(char* filename) {
     buffer[fileSize] = '\0';
     fclose(file);
     return buffer;
+}
+
+void printToFile(char* outputFile, char* text){
+    FILE *file = fopen(outputFile, "w");
+    if (file == NULL) {
+        printf("Could not open file %s\n", outputFile);
+        exit(1);
+    }
+    fprintf(file, "%s", text);
+    fclose(file);
 }
 
 int main(){
