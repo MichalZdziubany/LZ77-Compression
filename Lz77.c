@@ -19,7 +19,7 @@ void compress(char* inputText, char* outputfile){
     int tokenCount = 0;
 
     for (int i = 0; i < inputLength; i++){
-        
+
     }
     
 
@@ -33,7 +33,7 @@ void decompress(char* inputText, char* outputfile){
 }
 
 char* readFile(char* filename) {
-    FILE *file = fopen(filename, "r");
+    FILE *file = fopen(filename, "rb");
     if (file == NULL) {
         printf("Could not open file %s\n", filename);
         exit(1);
