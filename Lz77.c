@@ -2,9 +2,26 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define Search_Buffer_Size 4096
+#define Look_Ahead_Buffer_Size 16
+
+typedef struct {
+    int offset;
+    int length;
+    char next;
+} LZ77Token;
+
 void compress(char* inputText, char* outputfile){
     printf("Compressing to %s\n", outputfile);
 
+    int inputLength = strlen(inputText);
+    LZ77Token* tokens = (LZ77Token*)malloc(inputLength * sizeof(LZ77Token));
+    int tokenCount = 0;
+
+    for (int i = 0; i < inputLength; i++){
+        
+    }
+    
 
     printToFile(outputfile, inputText);
 }
