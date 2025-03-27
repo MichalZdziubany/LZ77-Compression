@@ -23,10 +23,10 @@ void compress(char* inputText, char* outputfile){
         int maxLength = 0;
         int maxOffset = 0;
 
-        for (int j = 0; j < Search_Buffer_Size && j <= i; j++){
+        for (int j = 1; j < Search_Buffer_Size && j <= i; j++){
             int length = 0;
-            while (length < Look_Ahead_Buffer_Size && i + length < inputLength && inputText[i - j + length] == inputText[i + length]){
-                length++;
+            while (length < Look_Ahead_Buffer_Size && i + length < inputLength && inputText[i - j + length] == inputText[i + length]) {
+             length++;
             }
             if (length > maxLength){
                 maxLength = length;
