@@ -60,9 +60,21 @@ void compress(char* inputText, char* outputfile){
         }
         tokenCount++;
     }
-    
 
-    printToFile(outputfile, tokens, tokenCount);
+    FILE *file = fopen(outputfile, "wb");
+    if (file == NULL) {
+        printf("Could not open file %s\n", outputfile);
+        exit(1);
+    }
+    fwrite(tokens, sizeof(LZ77Token), tokenCount, file);
+    fclose(file);
+
+    printf("Debugging Output (Tokens):\n");
+    for (int i = 0; i < tokenCount; i++) {
+        printf("Token %d: Offset = %d, Length = %d, Next = '%c'\n",
+               i, tokens[i].offset, tokens[i].length, tokens[i].next);
+    }
+
     free(tokens);
     printf("Compression complete");
 }
@@ -99,25 +111,6 @@ char* readFile(char* filename) {
     return buffer;
 }
 
-//Function that rints the compressed tokens to a file in binary format
-//Parameters: outputFile - the name of the file to write to
-//          tokens - a pointer to the array of tokens
-//          tokenCount - the number of tokens in the array 
-void printToFile(char* outputFile, LZ77Token* tokens, int tokenCount){
-    FILE *file = fopen(outputFile, "wb");
-    if (file == NULL) {
-        printf("Could not open file %s\n", outputFile);
-        exit(1);
-    }
-    fwrite(tokens, sizeof(LZ77Token), tokenCount, file);
-    fclose(file);
-
-    printf("Debugging Output (Tokens):\n");
-    for (int i = 0; i < tokenCount; i++) {
-        printf("Token %d: Offset = %d, Length = %d, Next = '%c'\n",
-               i, tokens[i].offset, tokens[i].length, tokens[i].next);
-    }
-}
 
 //Main function handles user input and function calls
 int main(){
