@@ -89,7 +89,11 @@ void printToFile(char* outputFile, LZ77Token* tokens, int tokenCount){
     fwrite(tokens, sizeof(LZ77Token), tokenCount, file);
     fclose(file);
 
-    
+    printf("Debugging Output (Tokens):\n");
+    for (int i = 0; i < tokenCount; i++) {
+        printf("Token %d: Offset = %d, Length = %d, Next = '%c'\n",
+               i, tokens[i].offset, tokens[i].length, tokens[i].next);
+    }
 }
 
 int main(){
