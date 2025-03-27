@@ -17,19 +17,47 @@ void compress(char* inputText, char* outputfile){
     int inputLength = strlen(inputText);
     LZ77Token* tokens = (LZ77Token*)malloc(inputLength * sizeof(LZ77Token));
     int tokenCount = 0;
+    int i = 0;
 
-    for (int i = 0; i < inputLength; i++){
+    while (i < inputLength) {
+        int maxLength = 0;
+        int maxOffset = 0;
 
+        for (int j = 0; j < Search_Buffer_Size && j <= i; j++){
+            int length = 0;
+            while (length < Look_Ahead_Buffer_Size && i + length < inputLength && inputText[i - j + length] == inputText[i + length]){
+                length++;
+            }
+            if (length > maxLength){
+                maxLength = length;
+                maxOffset = j;
+            }
+            
+        }
+        
+        if (maxLength > 0) {
+            tokens[tokenCount].offset = maxOffset;
+            tokens[tokenCount].length = maxLength;
+            tokens[tokenCount].next = inputText[i + maxLength];
+            i += maxLength + 1;
+        } else {
+            tokens[tokenCount].offset = 0;
+            tokens[tokenCount].length = 0;
+            tokens[tokenCount].next = inputText[i];
+            i++;
+        }
+        tokenCount++;
     }
     
 
-    printToFile(outputfile, inputText);
+    printToFile(outputfile, tokens, tokenCount);
+    free(tokens);
 }
 
 void decompress(char* inputText, char* outputfile){
     printf("DeCompressing to %s\n", outputfile);
 
-    printToFile(outputfile, inputText);
+    //printToFile(outputfile, inputText);
 }
 
 char* readFile(char* filename) {
@@ -52,14 +80,16 @@ char* readFile(char* filename) {
     return buffer;
 }
 
-void printToFile(char* outputFile, char* text){
-    FILE *file = fopen(outputFile, "w");
+void printToFile(char* outputFile, LZ77Token* tokens, int tokenCount){
+    FILE *file = fopen(outputFile, "wb");
     if (file == NULL) {
         printf("Could not open file %s\n", outputFile);
         exit(1);
     }
-    fprintf(file, "%s", text);
+    fwrite(tokens, sizeof(LZ77Token), tokenCount, file);
     fclose(file);
+
+    
 }
 
 int main(){
