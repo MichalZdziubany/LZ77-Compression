@@ -17,8 +17,25 @@ typedef struct {
 //Function to compress the bytes read from a text file
 //Parameters: inputText - the data read in binary format from the file inputted by the user
 //          outputfile - the name of the file where the compressed data will be written
-void compress(char* inputText, char* outputfile){
+void compress(char* filename, char* outputfile){
     printf("Compressing to %s\n", outputfile);
+
+    FILE *file = fopen(filename, "rb");
+    if (file == NULL) {
+        printf("Could not open file %s\n", filename);
+        exit(1);
+    }
+    fseek(file, 0, SEEK_END);
+    long fileSize = ftell(file);
+    fseek(file, 0, SEEK_SET);
+    char *inputText = (char*)malloc(fileSize + 1);
+    if (inputText == NULL) {
+        printf("Memory allocation failed\n");
+        exit(1);
+    }
+    fread(inputText, 1, fileSize, file);
+    inputText[fileSize] = '\0';
+    fclose(file);
 
     int inputLength = strlen(inputText);
     //Allocate memory for tokens, assuming worst case that each character is a token
@@ -62,13 +79,13 @@ void compress(char* inputText, char* outputfile){
     }
 
     //Open the file in binary write mode
-    FILE *file = fopen(outputfile, "wb");
-    if (file == NULL) {
+    FILE *fileWrite = fopen(outputfile, "wb");
+    if (fileWrite == NULL) {
         printf("Could not open file %s\n", outputfile);
         exit(1);
     }
-    fwrite(tokens, sizeof(LZ77Token), tokenCount, file);
-    fclose(file);
+    fwrite(tokens, sizeof(LZ77Token), tokenCount, fileWrite);
+    fclose(fileWrite);
 
     printf("Debugging Output (Tokens):\n");
     for (int i = 0; i < tokenCount; i++) {
@@ -83,20 +100,56 @@ void compress(char* inputText, char* outputfile){
 //Function to decompress the compressed data
 //Parameters: inputText - the compressed data read from the file
 //          outputfile - the name of the file where the decompressed data will be written
-void decompress(char* inputText, char* outputfile){
+void decompress(char* inputFile, char* outputfile){
     printf("DeCompressing to %s\n", outputfile);
 
-    //Read Tokens from compressed file
-    LZ77Token* tokens = (LZ77Token*)inputText;
-    int tokenCount = strlen(inputText) / sizeof(LZ77Token);
+    // Open the input file in binary read mode
+    FILE *file = fopen(inputFile, "rb");
+    if (file == NULL) {
+        printf("Could not open file %s\n", inputFile);
+        exit(1);
+    }
 
-    //Allocate memory for the decompressed text with a large buffer size
-    char* decompressedText = (char*)malloc(Search_Buffer_Size * 10);
+    // Get the size of the input file
+    fseek(file, 0, SEEK_END);
+    long fileSize = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    // Allocate memory for the compressed data
+    char *inputText = (char *)malloc(fileSize);
+    if (inputText == NULL) {
+        printf("Memory allocation failed\n");
+        fclose(file);
+        exit(1);
+    }
+
+    // Read the file contents into the buffer
+    fread(inputText, 1, fileSize, file);
+    fclose(file);
+
+    // Calculate the number of tokens
+    int tokenCount = fileSize / sizeof(LZ77Token);
+
+    // Debugging: Print the number of tokens
+    printf("Number of tokens: %d\n", tokenCount);
+
+    // Allocate memory for the decompressed text with a large buffer
+    char *decompressedText = (char *)malloc(Search_Buffer_Size * 10);
+    if (decompressedText == NULL) {
+        printf("Memory allocation failed\n");
+        free(inputText);
+        exit(1);
+    }
     int decompressedLength = 0;
 
     //Reconstruct the original text using the tokens
+    LZ77Token *tokens = (LZ77Token *)inputText;
     for (int i = 0; i < tokenCount; i++) {
         LZ77Token token = tokens[i];
+
+        //Debugging: Print the details of the current token
+        printf("Token %d: Offset = %d, Length = %d, Next = '%c'\n",
+            i, token.offset, token.length, token.next);
 
         //Copy the matching substring from the decompressed text
         for (int j = 0; j < token.length; j++) {
@@ -113,42 +166,19 @@ void decompress(char* inputText, char* outputfile){
     decompressedText[decompressedLength] = '\0';
 
     //Write the decompressed text to the output file
-    FILE* file = fopen(outputfile, "w");
-    if (file == NULL) {
+    FILE* fileWrite = fopen(outputfile, "w");
+    if (fileWrite == NULL) {
         printf("Could not open file %s for writing\n", outputfile);
         free(decompressedText);
         exit(1);
     }
-    fprintf(file, "%s", decompressedText);
-    fclose(file);
+    fprintf(fileWrite, "%s", decompressedText);
+    fclose(fileWrite);
 
     //Free allocated memory
     free(decompressedText);
 
     printf("Decompression complete\n");
-}
-
-//Function that opens a file in binary mode and reads its contents into a dynamically allocated buffer
-//Parameters: filename - the name of the file to read
-//Returns: a pointer to the buffer containing the file contents
-char* readFile(char* filename) {
-    FILE *file = fopen(filename, "rb");
-    if (file == NULL) {
-        printf("Could not open file %s\n", filename);
-        exit(1);
-    }
-    fseek(file, 0, SEEK_END);
-    long fileSize = ftell(file);
-    fseek(file, 0, SEEK_SET);
-    char *buffer = (char*)malloc(fileSize + 1);
-    if (buffer == NULL) {
-        printf("Memory allocation failed\n");
-        exit(1);
-    }
-    fread(buffer, 1, fileSize, file);
-    buffer[fileSize] = '\0';
-    fclose(file);
-    return buffer;
 }
 
 
@@ -167,18 +197,14 @@ int main(){
         scanf("%s", inputFile);
         printf("Enter the name of the output file: ");
         scanf("%s", outputFile);
-        char* inputText = readFile(inputFile);
-        compress(inputText, outputFile);
-        free(inputText);
+        compress(inputFile, outputFile);
     } else if (option == 2)
     {
         printf("Enter the name of the file to decompress: ");
         scanf("%s", inputFile); 
         printf("Enter the name of the output file: ");
         scanf("%s", outputFile);
-        char* inputText = readFile(inputFile);
-        decompress(inputText, outputFile);
-        free(inputText);
+        decompress(inputFile, outputFile);
     }else{
         printf("Invalid option\n");
 
