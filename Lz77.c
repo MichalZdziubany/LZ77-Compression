@@ -61,6 +61,7 @@ void compress(char* inputText, char* outputfile){
         tokenCount++;
     }
 
+    //Open the file in binary write mode
     FILE *file = fopen(outputfile, "wb");
     if (file == NULL) {
         printf("Could not open file %s\n", outputfile);
@@ -85,7 +86,46 @@ void compress(char* inputText, char* outputfile){
 void decompress(char* inputText, char* outputfile){
     printf("DeCompressing to %s\n", outputfile);
 
-    //printToFile(outputfile, inputText);
+    //Read Tokens from compressed file
+    LZ77Token* tokens = (LZ77Token*)inputText;
+    int tokenCount = strlen(inputText) / sizeof(LZ77Token);
+
+    //Allocate memory for the decompressed text with a large buffer size
+    char* decompressedText = (char*)malloc(Search_Buffer_Size * 10);
+    int decompressedLength = 0;
+
+    //Reconstruct the original text using the tokens
+    for (int i = 0; i < tokenCount; i++) {
+        LZ77Token token = tokens[i];
+
+        //Copy the matching substring from the decompressed text
+        for (int j = 0; j < token.length; j++) {
+            decompressedText[decompressedLength] = decompressedText[decompressedLength - token.offset + j];
+            decompressedLength++;
+        }
+
+        //Append the next character
+        decompressedText[decompressedLength] = token.next;
+        decompressedLength++;
+    }
+
+    //Null-terminate the decompressed text
+    decompressedText[decompressedLength] = '\0';
+
+    //Write the decompressed text to the output file
+    FILE* file = fopen(outputfile, "w");
+    if (file == NULL) {
+        printf("Could not open file %s for writing\n", outputfile);
+        free(decompressedText);
+        exit(1);
+    }
+    fprintf(file, "%s", decompressedText);
+    fclose(file);
+
+    //Free allocated memory
+    free(decompressedText);
+
+    printf("Decompression complete\n");
 }
 
 //Function that opens a file in binary mode and reads its contents into a dynamically allocated buffer
