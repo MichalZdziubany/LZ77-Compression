@@ -133,8 +133,9 @@ void decompress(char* inputFile, char* outputfile){
     // Debugging: Print the number of tokens
     printf("Number of tokens: %d\n", tokenCount);
 
-    // Allocate memory for the decompressed text with a large buffer
-    char *decompressedText = (char *)malloc(Search_Buffer_Size * 10);
+    //Allocate memory for the decompressed text with an initial size
+    int bufferSize = Search_Buffer_Size * 10;
+    char *decompressedText = (char *)malloc(bufferSize);
     if (decompressedText == NULL) {
         printf("Memory allocation failed\n");
         free(inputText);
@@ -146,6 +147,17 @@ void decompress(char* inputFile, char* outputfile){
     LZ77Token *tokens = (LZ77Token *)inputText;
     for (int i = 0; i < tokenCount; i++) {
         LZ77Token token = tokens[i];
+
+        //Resize the buffer if needed
+        while (decompressedLength + token.length + 1 >= bufferSize) {
+            bufferSize *= 2;
+            decompressedText = (char *)realloc(decompressedText, bufferSize);
+            if (decompressedText == NULL) {
+                printf("Memory reallocation failed\n");
+                free(inputText);
+                exit(1);
+            }
+        }
 
         //Debugging: Print the details of the current token
         printf("Token %d: Offset = %d, Length = %d, Next = '%c'\n",
@@ -164,6 +176,7 @@ void decompress(char* inputFile, char* outputfile){
 
     //Null-terminate the decompressed text
     decompressedText[decompressedLength] = '\0';
+    printf("decompressedText = %s\n", decompressedText);
 
     //Write the decompressed text to the output file
     FILE* fileWrite = fopen(outputfile, "w");
