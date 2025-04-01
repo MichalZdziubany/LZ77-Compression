@@ -101,13 +101,13 @@ void compress(char* filename, char* outputfile){
     fwrite(tokens, sizeof(LZ77Token), tokenCount, fileWrite);
     fclose(fileWrite);
 
-    printf("Debugging Output (Tokens):\n");
+    /*printf("Debugging Output (Tokens):\n");
     for (int i = 0; i < tokenCount; i++) {
         printf("Token %d: Offset = %d, Length = %d, Next = '%s'\n",
             i, tokens[i].offset, tokens[i].length,
             tokens[i].next == '\0' ? "\\0" : (char[]){tokens[i].next, '\0'});
     }
-
+    */
     free(tokens);
     printf("Compression complete\n");
 }
@@ -146,7 +146,7 @@ void decompress(char* inputFile, char* outputfile){
     int tokenCount = fileSize / sizeof(LZ77Token);
 
     // Debugging: Print the number of tokens
-    printf("Number of tokens: %d\n", tokenCount);
+    //printf("Number of tokens: %d\n", tokenCount);
 
     //Allocate memory for the decompressed text with an initial size
     int bufferSize = Search_Buffer_Size * 10;
@@ -163,10 +163,10 @@ void decompress(char* inputFile, char* outputfile){
     for (int i = 0; i < tokenCount; i++) {
         LZ77Token token = tokens[i];
 
-        printf("Token %d: Offset = %d, Length = %d, Next = '%s'\n",
+        /*printf("Token %d: Offset = %d, Length = %d, Next = '%s'\n",
             i, token.offset, token.length,
             token.next == '\0' ? "\\0" : (char[]){token.next, '\0'});
-
+        */
         //Validate token values
         if (token.offset > decompressedLength || token.offset < 0) {
             printf("Error: Invalid token offset %d at token %d\n", token.offset, i);
@@ -205,14 +205,15 @@ void decompress(char* inputFile, char* outputfile){
         if (token.next != '\0') {
             decompressedText[decompressedLength] = token.next;
             decompressedLength++;
-        } else {
+        } /*else {
             printf("Token %d: Next is '\\0', skipping append.\n", i);
-        }
+        }*/
     }
 
     //Null-terminate the decompressed text
     decompressedText[decompressedLength] = '\0';
-    printf("decompressedText = %s\n", decompressedText);
+
+    //printf("decompressedText = %s\n", decompressedText);
 
     //Write the decompressed text to the output file as plain text
     FILE *fileWrite = fopen(outputfile, "w");
@@ -258,7 +259,7 @@ int main(){
             scanf("%s", outputFile);
             decompress(inputFile, outputFile);
         }
-    } while (option != -1); // Exit condition
+    } while (option != -1);
     printf("Exiting program.\n");
 
     return 0;
