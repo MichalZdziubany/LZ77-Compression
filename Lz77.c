@@ -67,12 +67,26 @@ void compress(char* filename, char* outputfile){
         if (maxLength > 0) {
             tokens[tokenCount].offset = maxOffset;
             tokens[tokenCount].length = maxLength;
-            tokens[tokenCount].next = inputText[i + maxLength];
-            i += maxLength + 1; //move the current position to the next character after the match
+        
+            //Check if we are at the end of the input text
+            if (i + maxLength < inputLength) {
+                tokens[tokenCount].next = inputText[i + maxLength];
+            } else {
+                tokens[tokenCount].next = '\0';
+            }
+        
+            i += maxLength + 1;
         } else {
             tokens[tokenCount].offset = 0;
             tokens[tokenCount].length = 0;
-            tokens[tokenCount].next = inputText[i];
+        
+            //Check if we are at the end of the input text
+            if (i < inputLength) {
+                tokens[tokenCount].next = inputText[i];
+            } else {
+                tokens[tokenCount].next = '\0';
+            }
+        
             i++;
         }
         tokenCount++;
@@ -89,12 +103,13 @@ void compress(char* filename, char* outputfile){
 
     printf("Debugging Output (Tokens):\n");
     for (int i = 0; i < tokenCount; i++) {
-        printf("Token %d: Offset = %d, Length = %d, Next = '%c'\n",
-               i, tokens[i].offset, tokens[i].length, tokens[i].next);
+        printf("Token %d: Offset = %d, Length = %d, Next = '%s'\n",
+            i, tokens[i].offset, tokens[i].length,
+            tokens[i].next == '\0' ? "\\0" : (char[]){tokens[i].next, '\0'});
     }
 
     free(tokens);
-    printf("Compression complete");
+    printf("Compression complete\n");
 }
 
 //Function to decompress the compressed data
@@ -148,6 +163,24 @@ void decompress(char* inputFile, char* outputfile){
     for (int i = 0; i < tokenCount; i++) {
         LZ77Token token = tokens[i];
 
+        printf("Token %d: Offset = %d, Length = %d, Next = '%s'\n",
+            i, token.offset, token.length,
+            token.next == '\0' ? "\\0" : (char[]){token.next, '\0'});
+
+        //Validate token values
+        if (token.offset > decompressedLength || token.offset < 0) {
+            printf("Error: Invalid token offset %d at token %d\n", token.offset, i);
+            free(inputText);
+            free(decompressedText);
+            exit(1);
+        }
+        if (token.length < 0 || token.length > Look_Ahead_Buffer_Size) {
+            printf("Error: Invalid token length %d at token %d\n", token.length, i);
+            free(inputText);
+            free(decompressedText);
+            exit(1);
+        }
+
         //Resize the buffer if needed
         while (decompressedLength + token.length + 1 >= bufferSize) {
             bufferSize *= 2;
@@ -159,30 +192,34 @@ void decompress(char* inputFile, char* outputfile){
             }
         }
 
-        //Debugging: Print the details of the current token
-        printf("Token %d: Offset = %d, Length = %d, Next = '%c'\n",
-            i, token.offset, token.length, token.next);
-
         //Copy the matching substring from the decompressed text
-        for (int j = 0; j < token.length; j++) {
-            decompressedText[decompressedLength] = decompressedText[decompressedLength - token.offset + j];
-            decompressedLength++;
+        if (token.length > 0) {
+            int start = decompressedLength - token.offset;
+            for (int j = 0; j < token.length; j++) {
+                decompressedText[decompressedLength] = decompressedText[start + j];
+                decompressedLength++;
+            }
         }
 
         //Append the next character
-        decompressedText[decompressedLength] = token.next;
-        decompressedLength++;
+        if (token.next != '\0') {
+            decompressedText[decompressedLength] = token.next;
+            decompressedLength++;
+        } else {
+            printf("Token %d: Next is '\\0', skipping append.\n", i);
+        }
     }
 
     //Null-terminate the decompressed text
     decompressedText[decompressedLength] = '\0';
     printf("decompressedText = %s\n", decompressedText);
 
-    //Write the decompressed text to the output file
-    FILE* fileWrite = fopen(outputfile, "w");
+    //Write the decompressed text to the output file as plain text
+    FILE *fileWrite = fopen(outputfile, "w");
     if (fileWrite == NULL) {
         printf("Could not open file %s for writing\n", outputfile);
         free(decompressedText);
+        free(inputText);
         exit(1);
     }
     fprintf(fileWrite, "%s", decompressedText);
@@ -190,6 +227,7 @@ void decompress(char* inputFile, char* outputfile){
 
     //Free allocated memory
     free(decompressedText);
+    free(inputText);
 
     printf("Decompression complete\n");
 }
@@ -200,29 +238,28 @@ int main(){
     int option;
     char inputFile[256], outputFile[256];
 
-    printf("Choose an option: \n");
-    printf("1. Compress\n");
-    printf("2. Decompress\n");
-    scanf("%d", &option);
+    do {
+        printf("Choose an option: \n");
+        printf("1. Compress\n");
+        printf("2. Decompress\n");
+        printf("-1. Exit\n");
+        scanf("%d", &option);
 
-    if (option == 1){
-        printf("Enter the name of the file to compress: ");
-        scanf("%s", inputFile);
-        printf("Enter the name of the output file: ");
-        scanf("%s", outputFile);
-        compress(inputFile, outputFile);
-    } else if (option == 2)
-    {
-        printf("Enter the name of the file to decompress: ");
-        scanf("%s", inputFile); 
-        printf("Enter the name of the output file: ");
-        scanf("%s", outputFile);
-        decompress(inputFile, outputFile);
-    }else{
-        printf("Invalid option\n");
+        if (option == 1) {
+            printf("Enter the name of the file to compress (e.g., input.txt): ");
+            scanf("%s", inputFile);
+            printf("Enter the name of the output compressed file (e.g., compressed.bin): ");
+            scanf("%s", outputFile);
+            compress(inputFile, outputFile);
+        } else if (option == 2) {
+            printf("Enter the name of the compressed file to decompress (e.g., compressed.bin): ");
+            scanf("%s", inputFile);
+            printf("Enter the name of the output decompressed file (e.g., output.txt): ");
+            scanf("%s", outputFile);
+            decompress(inputFile, outputFile);
+        }
+    } while (option != -1); // Exit condition
+    printf("Exiting program.\n");
 
-        return 1;
-    }
-    
     return 0;
 }
