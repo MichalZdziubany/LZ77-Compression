@@ -50,7 +50,5 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
-compress.txt
-test.txt
-compress2.txt
-test2.txt
+*.bin
+*.txt
