@@ -90,6 +90,12 @@ void compress(char* filename, char* outputfile){
             i++;
         }
         tokenCount++;
+
+        //Progress indicator based on bytes processed
+        if (i % 100 == 0 || i == inputLength) {
+            printf("\rCompression progress: %.2f%%", (double)i / inputLength * 100);
+            fflush(stdout);
+        }
     }
 
     //Open the file in binary write mode
@@ -109,7 +115,7 @@ void compress(char* filename, char* outputfile){
     }
     */
     free(tokens);
-    printf("Compression complete\n");
+    printf("\nCompression complete\n");
 }
 
 //Function to decompress the compressed data
@@ -181,9 +187,9 @@ void decompress(char* inputFile, char* outputfile){
             exit(1);
         }
 
-        //Resize the buffer if needed
+        //Resize the buffer if needed by 50%
         while (decompressedLength + token.length + 1 >= bufferSize) {
-            bufferSize *= 2;
+            bufferSize += bufferSize / 2; 
             decompressedText = (char *)realloc(decompressedText, bufferSize);
             if (decompressedText == NULL) {
                 printf("Memory reallocation failed\n");
@@ -208,6 +214,12 @@ void decompress(char* inputFile, char* outputfile){
         } /*else {
             printf("Token %d: Next is '\\0', skipping append.\n", i);
         }*/
+
+        //Progress indicator based on tokens processed
+        if (i % 100 == 0 || i == tokenCount - 1) {
+            printf("\rDecompression progress: %.2f%%", (double)(i + 1) / tokenCount * 100);
+            fflush(stdout);
+        }
     }
 
     //Null-terminate the decompressed text
@@ -230,7 +242,7 @@ void decompress(char* inputFile, char* outputfile){
     free(decompressedText);
     free(inputText);
 
-    printf("Decompression complete\n");
+    printf("\nDecompression complete\n");
 }
 
 
