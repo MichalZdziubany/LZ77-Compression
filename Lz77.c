@@ -9,9 +9,9 @@
 
 //Create structure to store the compression metadata as tokens
 typedef struct {
-    int offset;
-    int length;
-    char next;
+    int offset;//How far back the match starts
+    int length;//Length of the match found 
+    char next;//Next character after the match
 } LZ77Token;
 
 //Function to compress the bytes read from a text file
@@ -20,30 +20,36 @@ typedef struct {
 void compress(char* filename, char* outputfile){
     printf("Compressing to %s\n", outputfile);
 
+    //Open the file in binary read mode
     FILE *file = fopen(filename, "rb");
     if (file == NULL) {
         printf("Could not open file %s\n", filename);
         exit(1);
     }
+    //Go to the end of the file and get the file size
     fseek(file, 0, SEEK_END);
     long fileSize = ftell(file);
+    //Go back to the beggining of the file
     fseek(file, 0, SEEK_SET);
+    //Create input buffer according to the file size
     char *inputText = (char*)malloc(fileSize + 1);
     if (inputText == NULL) {
         printf("Memory allocation failed\n");
         exit(1);
     }
+    //read the file and close it
     fread(inputText, 1, fileSize, file);
     inputText[fileSize] = '\0';
     fclose(file);
 
+    //Get the length of the input
     int inputLength = strlen(inputText);
     //Allocate memory for tokens, assuming worst case that each character is a token
     LZ77Token* tokens = (LZ77Token*)malloc(inputLength * sizeof(LZ77Token));
     int tokenCount = 0;
     int i = 0;
 
-    //main loop
+    //Main loop
     while (i < inputLength) {
         int maxLength = 0;
         int maxOffset = 0;
@@ -51,7 +57,7 @@ void compress(char* filename, char* outputfile){
         //Search for the longest match in the search buffer
         for (int j = 1; j < Search_Buffer_Size && j <= i; j++){
             int length = 0;
-            //compare characters in the search buffer with the look ahead buffer
+            //Compare characters in the search buffer with the look ahead buffer
             while (length < Look_Ahead_Buffer_Size && i + length < inputLength && inputText[i - j + length] == inputText[i + length]) {
              length++;
             }
@@ -62,7 +68,7 @@ void compress(char* filename, char* outputfile){
             
         }
         
-        //create token for the longest match found
+        //Create token for the longest match found
         //If no match is found, set the offset and length to 0
         if (maxLength > 0) {
             tokens[tokenCount].offset = maxOffset;
@@ -104,23 +110,26 @@ void compress(char* filename, char* outputfile){
         printf("Could not open file %s\n", outputfile);
         exit(1);
     }
+    //write the compressed bytes into the output file and close it
     fwrite(tokens, sizeof(LZ77Token), tokenCount, fileWrite);
     fclose(fileWrite);
 
-    /*printf("Debugging Output (Tokens):\n");
+    /*
+    printf("Debugging Output (Tokens):\n");
     for (int i = 0; i < tokenCount; i++) {
         printf("Token %d: Offset = %d, Length = %d, Next = '%s'\n",
             i, tokens[i].offset, tokens[i].length,
             tokens[i].next == '\0' ? "\\0" : (char[]){tokens[i].next, '\0'});
     }
     */
+    //free the tokens
     free(tokens);
     printf("\nCompression complete\n");
 }
 
 //Function to decompress the compressed data
 //Parameters: inputText - the compressed data read from the file
-//          outputfile - the name of the file where the decompressed data will be written
+//            outputfile - the name of the file where the decompressed data will be written
 void decompress(char* inputFile, char* outputfile){
     printf("DeCompressing to %s\n", outputfile);
 
@@ -173,7 +182,12 @@ void decompress(char* inputFile, char* outputfile){
             i, token.offset, token.length,
             token.next == '\0' ? "\\0" : (char[]){token.next, '\0'});
         */
-        //Validate token values
+
+        /*
+        Validate token values 
+        Print Errors if the offset or length of the token is too large
+        Free memory and exit progran
+        */
         if (token.offset > decompressedLength || token.offset < 0) {
             printf("Error: Invalid token offset %d at token %d\n", token.offset, i);
             free(inputText);
@@ -225,6 +239,7 @@ void decompress(char* inputFile, char* outputfile){
     //Null-terminate the decompressed text
     decompressedText[decompressedLength] = '\0';
 
+    //Debugging 
     //printf("decompressedText = %s\n", decompressedText);
 
     //Write the decompressed text to the output file as plain text
@@ -247,6 +262,7 @@ void decompress(char* inputFile, char* outputfile){
 
 
 //Main function handles user input and function calls
+//Loops until user enters -1 upon which the program terminates
 int main(){
     int option;
     char inputFile[256], outputFile[256];
@@ -273,6 +289,6 @@ int main(){
         }
     } while (option != -1);
     printf("Exiting program.\n");
-
+    //Exit withput errors
     return 0;
 }
