@@ -1,3 +1,37 @@
+/***************************************************************
+ * LZ77 Compression and Decompression Program
+ * 
+ * Description:
+ * This program implements the LZ77 compression and decompression
+ * algorithm. It compresses input files by identifying repeated
+ * patterns and encoding them as tokens containing:
+ *   - Offset: How far back the match starts
+ *   - Length: Length of the match
+ *   - Next: The next character after the match
+ * 
+ * The program can handle both compression and decompression:
+ *   - Compression: Reads an input file and writes compressed
+ *     binary data to an output file.
+ *   - Decompression: Reads a compressed binary file and writes
+ *     the decompressed data to an output file.
+ * 
+ * Features:
+ * - Progress indicators for both compression and decompression
+ * - Error handling for file operations and memory allocation
+ * - Adjustable buffer sizes for performance tuning
+ * 
+ * Usage:
+ * 1. Compile the program using a C compiler (e.g., gcc).
+ * 2. Run the program and follow the menu prompts to compress
+ *    or decompress files.
+ * 
+ * Author: Michal Zdziubany
+ * 
+ * Note:
+ * - This program assumes the input file is either text or binary.
+ * - Ensure sufficient memory is available for large files.
+ ***************************************************************/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
