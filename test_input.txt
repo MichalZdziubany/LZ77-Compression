@@ -1,0 +1,1 @@
+This is a test file for LZ77 compression. This file is used to verify compression and decompression.
